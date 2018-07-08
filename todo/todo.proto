@@ -20,4 +20,5 @@ message Void {}
 service Tasks {
     rpc List(Void) returns(TaskList) {}
     rpc Add(TaskTitle) returns(Task) {}
+    rpc Done(TaskTitle) returns(Task) {}
 }

@@ -15,7 +15,7 @@ import (
 func main() {
 	flag.Parse()
 	if flag.NArg() < 1 {
-		fmt.Fprintln(os.Stderr, "missing subcommand: add or list")
+		fmt.Fprintln(os.Stderr, "missing subcommand: add, list, or done")
 		os.Exit(1)
 	}
 
@@ -29,7 +29,7 @@ func main() {
 	case "add":
 		err = add(context.Background(), client, strings.Join(flag.Args()[1:], " "))
 	case "done":
-		err = done(strings.Join(flag.Args()[1:], " "))
+		err = done(context.Background(), client, strings.Join(flag.Args()[1:], " "))
 	case "list":
 		err = list(context.Background(), client)
 	default:
@@ -69,6 +69,11 @@ func list(ctx context.Context, client todo.TasksClient) error {
 	return nil
 }
 
-func done(text string) error {
-	return fmt.Errorf("DONE NOT IMPLEMENTED")
+func done(ctx context.Context, client todo.TasksClient, text string) error {
+	t, err := client.Done(ctx, &todo.TaskTitle{Title: text})
+	if err != nil {
+		return fmt.Errorf("could not complete task: %v", err)
+	}
+	fmt.Println("completed task:", t.Title)
+	return nil
 }

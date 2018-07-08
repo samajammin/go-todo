@@ -102,3 +102,7 @@ func (s taskServer) List(ctx context.Context, void *todo.Void) (*todo.TaskList, 
 		taskList.Tasks = append(taskList.Tasks, &task)
 	}
 }
+
+func (s taskServer) Done(ctx context.Context, taskTitle *todo.TaskTitle) (*todo.Task, error) {
+	return nil, fmt.Errorf("NEED TO IMPLEMENT DONE")
+}
