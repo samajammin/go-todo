@@ -1,17 +1,15 @@
 package main
 
 import (
-	"bytes"
-	"encoding/binary"
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
-
 	"github.com/sbrichards/go-todo/todo"
+	context "golang.org/x/net/context"
+	grpc "google.golang.org/grpc"
 )
 
 func main() {
@@ -21,14 +19,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	var err error
+	conn, err := grpc.Dial(":8888", grpc.WithInsecure())
+	if err != nil {
+		log.Fatalf("could not connect to server: %v", err)
+	}
+	client := todo.NewTasksClient(conn)
+
 	switch cmd := flag.Arg(0); cmd {
 	case "add":
-		err = add(strings.Join(flag.Args()[1:], " "))
+		err = add(context.Background(), client, strings.Join(flag.Args()[1:], " "))
 	case "done":
 		err = done(strings.Join(flag.Args()[1:], " "))
 	case "list":
-		err = list()
+		err = list(context.Background(), client)
 	default:
 		err = fmt.Errorf("Unknown subcommand: %s", cmd)
 	}
@@ -38,88 +41,34 @@ func main() {
 	}
 }
 
-type length int64
-
-const (
-	sizeOfLength = 8
-	dbPath       = "tododb.pb"
-)
-
-var endianness = binary.LittleEndian
-
-func add(text string) error {
-	if len(text) < 1 {
-		return fmt.Errorf("cannot add empty task")
-	}
-
-	task := &todo.Task{
-		Title: text,
-		Done:  false,
-	}
-
-	b, err := proto.Marshal(task)
+func add(ctx context.Context, client todo.TasksClient, text string) error {
+	t, err := client.Add(ctx, &todo.TaskTitle{Title: text})
 	if err != nil {
-		return fmt.Errorf("could not encode task: %v", err)
+		return fmt.Errorf("could not create task: %v", err)
 	}
-
-	f, err := os.OpenFile(dbPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		return fmt.Errorf("could not open %s: %v", dbPath, err)
-	}
-
-	if err := binary.Write(f, endianness, length(len(b))); err != nil {
-		return fmt.Errorf("could not encode length of message: %v", err)
-	}
-
-	_, err = f.Write(b)
-	if err != nil {
-		return fmt.Errorf("could not write task to file: %v", err)
-	}
-
-	if err := f.Close(); err != nil {
-		return fmt.Errorf("could not close file %s: %v", dbPath, err)
-	}
-
-	fmt.Println("\nAdded task,", proto.MarshalTextString(task))
+	fmt.Println("added task:", t.Title)
 	return nil
 }
 
-func list() error {
-	b, err := ioutil.ReadFile(dbPath)
+func list(ctx context.Context, client todo.TasksClient) error {
+	l, err := client.List(ctx, &todo.Void{})
 	if err != nil {
-		return fmt.Errorf("could not read %s: %v", dbPath, err)
+		return fmt.Errorf("could not fetch tasks: %v", err)
 	}
 
-	fmt.Println("\nHere are your todos:\n")
-	for {
-		if len(b) == 0 {
-			return nil
-		} else if len(b) < sizeOfLength {
-			return fmt.Errorf("remaining odd %d bytes", len(b))
-		}
+	fmt.Println("\nHere are your todos:")
 
-		var l length
-		if err := binary.Read(bytes.NewReader(b[:sizeOfLength]), endianness, &l); err != nil {
-			return fmt.Errorf("could not decode message length: %v", err)
-		}
-		b = b[sizeOfLength:]
-
-		var task todo.Task
-		if err := proto.Unmarshal(b[:l], &task); err != nil {
-			return fmt.Errorf("could not read task: %v", err)
-		}
-		b = b[l:]
-
-		if task.Done {
+	for _, t := range l.Tasks {
+		if t.Done {
 			fmt.Printf("[X]: ")
 		} else {
 			fmt.Printf("[ ]: ")
 		}
-		fmt.Println(task.Title)
+		fmt.Println(t.Title)
 	}
+	return nil
 }
 
 func done(text string) error {
-	fmt.Println("NEED TO IMPLEMENT DONE!")
-	return nil
+	return fmt.Errorf("DONE NOT IMPLEMENTED")
 }

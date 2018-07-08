@@ -6,3 +6,18 @@ message Task {
     string title = 1;
     bool done = 2;
 }
+
+message TaskTitle {
+    string title = 1;
+}
+
+message TaskList {
+    repeated Task tasks = 1;
+}
+
+message Void {}
+
+service Tasks {
+    rpc List(Void) returns(TaskList) {}
+    rpc Add(TaskTitle) returns(Task) {}
+}

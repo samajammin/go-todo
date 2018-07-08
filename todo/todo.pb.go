@@ -9,12 +9,20 @@ It is generated from these files:
 
 It has these top-level messages:
 	Task
+	TaskTitle
+	TaskList
+	Void
 */
 package todo
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
+
+import (
+	context "golang.org/x/net/context"
+	grpc "google.golang.org/grpc"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -51,18 +59,172 @@ func (m *Task) GetDone() bool {
 	return false
 }
 
+type TaskTitle struct {
+	Title string `protobuf:"bytes,1,opt,name=title" json:"title,omitempty"`
+}
+
+func (m *TaskTitle) Reset()                    { *m = TaskTitle{} }
+func (m *TaskTitle) String() string            { return proto.CompactTextString(m) }
+func (*TaskTitle) ProtoMessage()               {}
+func (*TaskTitle) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *TaskTitle) GetTitle() string {
+	if m != nil {
+		return m.Title
+	}
+	return ""
+}
+
+type TaskList struct {
+	Tasks []*Task `protobuf:"bytes,1,rep,name=tasks" json:"tasks,omitempty"`
+}
+
+func (m *TaskList) Reset()                    { *m = TaskList{} }
+func (m *TaskList) String() string            { return proto.CompactTextString(m) }
+func (*TaskList) ProtoMessage()               {}
+func (*TaskList) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *TaskList) GetTasks() []*Task {
+	if m != nil {
+		return m.Tasks
+	}
+	return nil
+}
+
+type Void struct {
+}
+
+func (m *Void) Reset()                    { *m = Void{} }
+func (m *Void) String() string            { return proto.CompactTextString(m) }
+func (*Void) ProtoMessage()               {}
+func (*Void) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
 func init() {
 	proto.RegisterType((*Task)(nil), "todo.Task")
+	proto.RegisterType((*TaskTitle)(nil), "todo.TaskTitle")
+	proto.RegisterType((*TaskList)(nil), "todo.TaskList")
+	proto.RegisterType((*Void)(nil), "todo.Void")
+}
+
+// Reference imports to suppress errors if they are not otherwise used.
+var _ context.Context
+var _ grpc.ClientConn
+
+// This is a compile-time assertion to ensure that this generated file
+// is compatible with the grpc package it is being compiled against.
+const _ = grpc.SupportPackageIsVersion4
+
+// Client API for Tasks service
+
+type TasksClient interface {
+	List(ctx context.Context, in *Void, opts ...grpc.CallOption) (*TaskList, error)
+	Add(ctx context.Context, in *TaskTitle, opts ...grpc.CallOption) (*Task, error)
+}
+
+type tasksClient struct {
+	cc *grpc.ClientConn
+}
+
+func NewTasksClient(cc *grpc.ClientConn) TasksClient {
+	return &tasksClient{cc}
+}
+
+func (c *tasksClient) List(ctx context.Context, in *Void, opts ...grpc.CallOption) (*TaskList, error) {
+	out := new(TaskList)
+	err := grpc.Invoke(ctx, "/todo.Tasks/List", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *tasksClient) Add(ctx context.Context, in *TaskTitle, opts ...grpc.CallOption) (*Task, error) {
+	out := new(Task)
+	err := grpc.Invoke(ctx, "/todo.Tasks/Add", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// Server API for Tasks service
+
+type TasksServer interface {
+	List(context.Context, *Void) (*TaskList, error)
+	Add(context.Context, *TaskTitle) (*Task, error)
+}
+
+func RegisterTasksServer(s *grpc.Server, srv TasksServer) {
+	s.RegisterService(&_Tasks_serviceDesc, srv)
+}
+
+func _Tasks_List_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TasksServer).List(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/todo.Tasks/List",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TasksServer).List(ctx, req.(*Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Tasks_Add_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TaskTitle)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TasksServer).Add(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/todo.Tasks/Add",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TasksServer).Add(ctx, req.(*TaskTitle))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+var _Tasks_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "todo.Tasks",
+	HandlerType: (*TasksServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "List",
+			Handler:    _Tasks_List_Handler,
+		},
+		{
+			MethodName: "Add",
+			Handler:    _Tasks_Add_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "todo.proto",
 }
 
 func init() { proto.RegisterFile("todo.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 87 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2a, 0xc9, 0x4f, 0xc9,
-	0xd7, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x01, 0xb1, 0x95, 0x0c, 0xb8, 0x58, 0x42, 0x12,
-	0x8b, 0xb3, 0x85, 0x44, 0xb8, 0x58, 0x4b, 0x32, 0x4b, 0x72, 0x52, 0x25, 0x18, 0x15, 0x18, 0x35,
-	0x38, 0x83, 0x20, 0x1c, 0x21, 0x21, 0x2e, 0x96, 0x94, 0xfc, 0xbc, 0x54, 0x09, 0x26, 0x05, 0x46,
-	0x0d, 0x8e, 0x20, 0x30, 0x3b, 0x89, 0x0d, 0xac, 0xdd, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0x5b,
-	0x3f, 0x92, 0x1c, 0x4c, 0x00, 0x00, 0x00,
+	// 184 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x6c, 0x8f, 0xb1, 0xaa, 0x83, 0x30,
+	0x18, 0x85, 0xcd, 0x35, 0x8a, 0x9e, 0x0b, 0xf7, 0xc2, 0x4f, 0x07, 0x71, 0x4a, 0x83, 0x83, 0x43,
+	0x91, 0x62, 0x9f, 0xa0, 0x7b, 0x27, 0x2b, 0xdd, 0x2d, 0x71, 0x10, 0x4b, 0x53, 0x9a, 0xbc, 0x3f,
+	0xe5, 0x8f, 0x05, 0x3b, 0x74, 0x3b, 0xc9, 0x77, 0x3e, 0x72, 0x02, 0x78, 0x6b, 0x6c, 0xf3, 0x78,
+	0x5a, 0x6f, 0x49, 0x72, 0xd6, 0x7b, 0xc8, 0x7e, 0x70, 0x33, 0x6d, 0x90, 0xf8, 0xc9, 0xdf, 0xc6,
+	0x42, 0x28, 0x51, 0xe7, 0xdd, 0x72, 0x20, 0x82, 0x34, 0xf6, 0x3e, 0x16, 0x3f, 0x4a, 0xd4, 0x59,
+	0x17, 0xb2, 0xde, 0x22, 0x67, 0xa3, 0x0f, 0x85, 0xaf, 0x9a, 0xde, 0x21, 0xe3, 0xca, 0x69, 0x72,
+	0x9e, 0x14, 0x12, 0x3f, 0xb8, 0xd9, 0x15, 0x42, 0xc5, 0xf5, 0x6f, 0x8b, 0x26, 0x4c, 0x60, 0xdc,
+	0x2d, 0x40, 0xa7, 0x90, 0x17, 0x3b, 0x99, 0xf6, 0x8c, 0x84, 0xaf, 0x1d, 0x55, 0x90, 0x41, 0x7d,
+	0x77, 0x19, 0x96, 0x7f, 0xab, 0xc7, 0x4c, 0x47, 0x54, 0x21, 0x3e, 0x1a, 0x43, 0xff, 0x2b, 0x08,
+	0x93, 0xca, 0x8f, 0x17, 0x74, 0x74, 0x4d, 0xc3, 0x67, 0x0f, 0xaf, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0xdf, 0xa8, 0x51, 0x14, 0xfa, 0x00, 0x00, 0x00,
 }
