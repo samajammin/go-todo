@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package todo;
 
-message Todo {
+message Task {
     string title = 1;
     bool done = 2;
 }
